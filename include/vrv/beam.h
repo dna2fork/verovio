@@ -48,7 +48,7 @@ public:
     /**
      *
      */
-    const ArrayOfBeamElementCoords *GetElementCoordRefs();
+    const ArrayOfBeamElementCoords *GetElementCoordRefs() const;
 
     /**
      * Initializes the m_beamElementCoords vector objects.
@@ -76,7 +76,7 @@ private:
     void CalcBeamPlace(Layer *layer, BeamDrawingInterface *beamInterface, data_BEAMPLACE place);
 
     // Helper to calculate the longest stem length of the beam (which will be used uniformely)
-    void CalcBeamStemLength(Staff *staff, data_STEMDIRECTION stemDir);
+    void CalcBeamStemLength(Staff *staff, data_BEAMPLACE place);
 
     // Helper to calculate relative position of the beam to for each of the coordinates
     void CalcMixedBeamPlace(Staff *staff);
@@ -183,10 +183,10 @@ protected:
     virtual void FilterList(ArrayOfObjects *childList);
 
     /**
-     * Helper function to calculate overlap with layer elements that 
-     * are placed within the duration of the beam 
+     * Helper function to calculate overlap with layer elements that
+     * are placed within the duration of the beam
      */
-    int CalcLayerOverlap(Doc *doc, int directionBias, int y1, int y2);
+    int CalcLayerOverlap(Doc *doc, Object *beam, int directionBias, int y1, int y2);
 
 private:
     //
@@ -221,7 +221,7 @@ public:
      * Return the encoded stem direction.
      * Access the value in the Stem element if already set.
      */
-    data_STEMDIRECTION GetStemDir();
+    data_STEMDIRECTION GetStemDir() const;
 
     void SetDrawingStemDir(
         data_STEMDIRECTION stemDir, Staff *staff, Doc *doc, BeamSegment *segment, BeamDrawingInterface *interface);

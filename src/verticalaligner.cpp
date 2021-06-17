@@ -386,7 +386,7 @@ int StaffAlignment::GetMinimumStaffSpacing(const Doc *doc, const AttSpacing *att
     const auto &option = doc->GetOptions()->m_spacingStaff;
     int spacing = option.GetValue() * doc->GetDrawingUnit(GetStaffSize());
 
-    if (!option.isSet() && attSpacing->HasSpacingStaff()) {
+    if (!option.IsSet() && attSpacing->HasSpacingStaff()) {
         spacing = attSpacing->GetSpacingStaff() * doc->GetDrawingUnit(100);
     }
     return spacing;
@@ -415,13 +415,13 @@ int StaffAlignment::GetMinimumSpacing(const Doc *doc) const
                 }
                 case SystemAligner::SpacingType::Brace: {
                     const auto &option = doc->GetOptions()->m_spacingBraceGroup;
-                    spacing = option.isSet() ? option.GetValue() * doc->GetDrawingUnit(GetStaffSize())
+                    spacing = option.IsSet() ? option.GetValue() * doc->GetDrawingUnit(GetStaffSize())
                                              : GetMinimumStaffSpacing(doc, scoreDefSpacing);
                     break;
                 }
                 case SystemAligner::SpacingType::Bracket: {
                     const auto &option = doc->GetOptions()->m_spacingBracketGroup;
-                    spacing = option.isSet() ? option.GetValue() * doc->GetDrawingUnit(GetStaffSize())
+                    spacing = option.IsSet() ? option.GetValue() * doc->GetDrawingUnit(GetStaffSize())
                                              : GetMinimumStaffSpacing(doc, scoreDefSpacing);
                     break;
                 }
@@ -638,7 +638,7 @@ int StaffAlignment::AdjustFloatingPositioners(FunctorParams *functorParams)
             if (overflowAbove > params->m_doc->GetDrawingStaffLineWidth(staffSize) / 2) {
                 // LogMessage("%sparams->m_doc top overflow: %d", this->GetUuid().c_str(), overflowAbove);
                 this->SetOverflowAbove(overflowAbove);
-                this->m_overflowAboveBBoxes.push_back((*iter));
+                m_overflowAboveBBoxes.push_back((*iter));
             }
 
             int overflowBelow = 0;
@@ -646,7 +646,7 @@ int StaffAlignment::AdjustFloatingPositioners(FunctorParams *functorParams)
             if (overflowBelow > params->m_doc->GetDrawingStaffLineWidth(staffSize) / 2) {
                 // LogMessage("%s bottom overflow: %d", this->GetUuid().c_str(), overflowBelow);
                 this->SetOverflowBelow(overflowBelow);
-                this->m_overflowBelowBBoxes.push_back((*iter));
+                m_overflowBelowBBoxes.push_back((*iter));
             }
             continue;
         }
@@ -893,7 +893,7 @@ int StaffAlignment::AdjustStaffOverlap(FunctorParams *functorParams)
     assert(params);
 
     // This is the bottom alignment (or something is wrong)
-    if (!this->m_staff) return FUNCTOR_STOP;
+    if (!m_staff) return FUNCTOR_STOP;
 
     if (params->m_previous == NULL) {
         params->m_previous = this;
@@ -913,7 +913,7 @@ int StaffAlignment::AdjustStaffOverlap(FunctorParams *functorParams)
                 // calculate the vertical overlap and see if this is more than the expected space
                 int overflowBelow = params->m_previous->CalcOverflowBelow(*iter);
                 int overflowAbove = this->CalcOverflowAbove(*i);
-                int spacing = std::max(params->m_previous->m_overflowBelow, this->m_overflowAbove);
+                int spacing = std::max(params->m_previous->m_overflowBelow, m_overflowAbove);
                 if (spacing < (overflowBelow + overflowAbove)) {
                     // LogDebug("Overlap %d", (overflowBelow + overflowAbove) - spacing);
                     this->SetOverlap((overflowBelow + overflowAbove) - spacing);

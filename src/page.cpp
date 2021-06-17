@@ -310,9 +310,22 @@ void Page::LayOutHorizontally()
 
     // Adjust the x position of the LayerElement where multiple layer collide
     // Look at each LayerElement and change the m_xShift if the bounding box is overlapping
+    // For the first iteration align elements without taking dots into consideration
     Functor adjustLayers(&Object::AdjustLayers);
     AdjustLayersParams adjustLayersParams(doc, &adjustLayers, doc->m_mdivScoreDef.GetStaffNs());
     this->Process(&adjustLayers, &adjustLayersParams);
+
+    // Adjust dots for the multiple layers. Try to align dots that can be grouped together when layers collide,
+    // otherwise keep their relative positioning
+    Functor adjustDots(&Object::AdjustDots);
+    Functor adjustDotsEnd(&Object::AdjustDotsEnd);
+    AdjustDotsParams adjustDotsParams(doc, &adjustDots, &adjustDotsEnd, doc->m_mdivScoreDef.GetStaffNs());
+    this->Process(&adjustDots, &adjustDotsParams, &adjustDotsEnd);
+
+    // adjust Layers again, this time including dots positioning
+    AdjustLayersParams newAdjustLayersParams(doc, &adjustLayers, doc->m_mdivScoreDef.GetStaffNs());
+    newAdjustLayersParams.m_ignoreDots = false;
+    this->Process(&adjustLayers, &newAdjustLayersParams);
 
     // Adjust the X position of the accidentals, including in chords
     Functor adjustAccidX(&Object::AdjustAccidX);
@@ -324,6 +337,15 @@ void Page::LayOutHorizontally()
     Functor adjustXPos(&Object::AdjustXPos);
     Functor adjustXPosEnd(&Object::AdjustXPosEnd);
     AdjustXPosParams adjustXPosParams(doc, &adjustXPos, &adjustXPosEnd, doc->m_mdivScoreDef.GetStaffNs());
+    adjustXPosParams.m_excludes.push_back(TABDURSYM);
+    this->Process(&adjustXPos, &adjustXPosParams, &adjustXPosEnd);
+
+    // Adjust tabRhyhtm separately
+    adjustXPosParams.m_excludes.clear();
+    adjustXPosParams.m_includes.push_back(TABDURSYM);
+    adjustXPosParams.m_includes.push_back(BARLINE_ATTR_RIGHT);
+    adjustXPosParams.m_includes.push_back(METERSIG);
+    adjustXPosParams.m_includes.push_back(KEYSIG);
     this->Process(&adjustXPos, &adjustXPosParams, &adjustXPosEnd);
 
     // Adjust the X shift of the Alignment looking at the bounding boxes
@@ -559,8 +581,8 @@ void Page::JustifyVertically()
             Page *penultimatePage = dynamic_cast<Page *>(pages->GetPrevious(this));
             assert(penultimatePage);
 
-            if (penultimatePage->m_drawingJustifiableHeight < this->m_drawingJustifiableHeight) {
-                this->m_drawingJustifiableHeight = penultimatePage->m_drawingJustifiableHeight;
+            if (penultimatePage->m_drawingJustifiableHeight < m_drawingJustifiableHeight) {
+                m_drawingJustifiableHeight = penultimatePage->m_drawingJustifiableHeight;
             }
 
             const int maxSystemsPerPage = doc->GetOptions()->m_systemMaxPerPage.GetValue();
@@ -577,8 +599,8 @@ void Page::JustifyVertically()
     // Justify Y position
     Functor justifyY(&Object::JustifyY);
     JustifyYParams justifyYParams(&justifyY, doc);
-    justifyYParams.m_justificationSum = this->m_justificationSum;
-    justifyYParams.m_spaceToDistribute = this->m_drawingJustifiableHeight;
+    justifyYParams.m_justificationSum = m_justificationSum;
+    justifyYParams.m_spaceToDistribute = m_drawingJustifiableHeight;
     this->Process(&justifyY, &justifyYParams);
 }
 
@@ -692,12 +714,12 @@ int Page::ApplyPPUFactor(FunctorParams *functorParams)
     assert(params);
 
     params->m_page = this;
-    this->m_pageWidth /= params->m_page->GetPPUFactor();
-    this->m_pageHeight /= params->m_page->GetPPUFactor();
-    this->m_pageMarginBottom /= params->m_page->GetPPUFactor();
-    this->m_pageMarginLeft /= params->m_page->GetPPUFactor();
-    this->m_pageMarginRight /= params->m_page->GetPPUFactor();
-    this->m_pageMarginTop /= params->m_page->GetPPUFactor();
+    m_pageWidth /= params->m_page->GetPPUFactor();
+    m_pageHeight /= params->m_page->GetPPUFactor();
+    m_pageMarginBottom /= params->m_page->GetPPUFactor();
+    m_pageMarginLeft /= params->m_page->GetPPUFactor();
+    m_pageMarginRight /= params->m_page->GetPPUFactor();
+    m_pageMarginTop /= params->m_page->GetPPUFactor();
 
     return FUNCTOR_CONTINUE;
 }
@@ -771,12 +793,12 @@ int Page::AlignSystemsEnd(FunctorParams *functorParams)
     AlignSystemsParams *params = vrv_params_cast<AlignSystemsParams *>(functorParams);
     assert(params);
 
-    this->m_drawingJustifiableHeight = params->m_shift;
-    this->m_justificationSum = params->m_justificationSum;
+    m_drawingJustifiableHeight = params->m_shift;
+    m_justificationSum = params->m_justificationSum;
 
     RunningElement *footer = this->GetFooter();
     if (footer) {
-        this->m_drawingJustifiableHeight -= footer->GetTotalHeight();
+        m_drawingJustifiableHeight -= footer->GetTotalHeight();
 
         // Move it up below the last system
         if (params->m_doc->GetOptions()->m_adjustPageHeight.GetValue()) {
